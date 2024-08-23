@@ -7,7 +7,7 @@ const JWT_SECRET = process.env.JWT_SECRET;
 const setAdmin = async (req, res) => {
     const secret = JWT_SECRET;
     const payload = {
-        email: req.body.email,
+       /* email: req.body.email,*/
     };
 
     const token = await jwt.sign(payload, secret);
