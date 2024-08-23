@@ -1,0 +1,2 @@
+# InVITE
+Personalised Event Management 
