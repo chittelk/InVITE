@@ -25,76 +25,76 @@ export default function signin({ adminIdCookie }) {
     const router = useRouter();
 
     useEffect(() => {
-        // If cookie found, Redirect to dashboard
+        console.log("NEXT_PUBLIC_API_URL:", process.env.NEXT_PUBLIC_API_URL);
         if (adminIdCookie) {
             setStep(2); // Skip auth steps
 
             setTimeout(() => {
-                // Set success message
                 setMessage({
                     errorMsg: "",
                     successMsg: "Redirecting you ...",
                 });
             }, 500);
 
-            // Redirect to dashboard
             setTimeout(() => {
                 router.push("/admin/dashboard");
             }, 800);
         }
-    }, []);
+    }, [adminIdCookie, router]);
 
     const handleSubmit = async (event) => {
         event.preventDefault();
-        const response = await fetch(
-            `${process.env.NEXT_PUBLIC_API_URL}/admin/auth`,
-            {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                },
-                body: JSON.stringify({
-                    email: email,
-                    password: password,
-                }),
+        try {
+            const response = await fetch(
+                `${process.env.NEXT_PUBLIC_API_URL}/admin/auth`,
+                {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                    },
+                    body: JSON.stringify({
+                        email: email,
+                        password: password,
+                    }),
+                }
+            );
+    
+            const data = await response.json();
+    
+            if (response.status === 200) {
+                alert("Login Successful")
+                setMessage({ errorMsg: "", successMsg: data.msg });
+                setAdminToken(data.admin_token);
+            } else {
+                setMessage({ errorMsg: data.msg, successMsg: "" });
             }
-        );
-        const data = await response.json();
-        if (response.status === 200) {
-            setMessage({ errorMsg: "", successMsg: data.msg });
-            console.log(data);
-            setStep(2); // Move to next step on the same page
-
-            setAdminToken(data.admin_token); // set cookie when signed up
-        } else {
-            console.error(`Failed with status code ${response.status}`);
-            setMessage({ errorMsg: data.msg, successMsg: "" });
+    
+            router.push("/admin/dashboard");
+    
+        } catch (error) {
+            console.error("Fetch error:", error);
+            setMessage({
+                errorMsg: "An error occurred. Please try again later.",
+                successMsg: "",
+            });
+            router.push("/admin/dashboard");
         }
     };
-
+    
     return (
         <div className="m-2">
-            {/* back button */}
             <FiArrowLeft
                 onClick={() => router.push("/")}
                 size={24}
                 className="cursor-pointer"
             />
-            {/* Page heading */}
-            <div className="text-center text-3xl font-bold">
+            <div className="text-3xl font-bold text-center">
                 Admin Authentication Page
             </div>
 
-            {/* Page Content */}
             <div className="max-w-3xl mx-auto mt-10">
-                {/* Steps Nav */}
                 <div className="flex items-center justify-center">
-                    {/* Step 1: normal-height:fit; mobile-view: 6rem*/}
-                    <div
-                        className={`w-full h-24 lg:h-fit ${
-                            step === 1 ? `font-medium` : ``
-                        }`}
-                    >
+                    <div className={`w-full h-24 lg:h-fit ${step === 1 ? `font-medium` : ``}`}>
                         <div
                             className={`h-full border-2 rounded-l-lg px-5 py-2 ${
                                 step >= 1
@@ -107,12 +107,7 @@ export default function signin({ adminIdCookie }) {
                         </div>
                     </div>
 
-                    {/* Step 2: normal-height:fit; mobile-view: 6rem */}
-                    <div
-                        className={`w-full h-24 lg:h-fit ${
-                            step === 2 ? `font-medium` : ``
-                        }`}
-                    >
+                    <div className={`w-full h-24 lg:h-fit ${step === 2 ? `font-medium` : ``}`}>
                         <div
                             className={`h-full border-2 border-l-0 rounded-r-lg px-5 py-2 ${
                                 step >= 2
@@ -126,24 +121,20 @@ export default function signin({ adminIdCookie }) {
                     </div>
                 </div>
 
-                {/* Error Message */}
                 {message.errorMsg && (
-                    <h1 className="rounded p-3 my-2 bg-red-200 text-red-600 font-medium">
+                    <h1 className="p-3 my-2 font-medium text-red-600 bg-red-200 rounded">
                         {message.errorMsg}
                     </h1>
                 )}
 
-                {/* Success Message */}
                 {message.successMsg && (
-                    <h1 className="rounded p-3 my-2 bg-green-200 text-green-600 font-medium">
+                    <h1 className="p-3 my-2 font-medium text-green-600 bg-green-200 rounded">
                         {message.successMsg}
                     </h1>
                 )}
 
-                {/* Steps Content */}
-                <div className="bg-white p-5 rounded-lg mt-2">
+                <div className="p-5 mt-2 bg-white rounded-lg">
                     {
-                        /* Step 1 Content*/
                         step === 1 && (
                             <form onSubmit={handleSubmit}>
                                 <label className="block mb-2 text-sm font-medium text-gray-700">
@@ -154,7 +145,7 @@ export default function signin({ adminIdCookie }) {
                                     id="email"
                                     name="email"
                                     value={email}
-                                    className="bg-gray-100 p-2 mx-2 mb-4 focus:outline-none rounded-lg w-full"
+                                    className="w-full p-2 mx-2 mb-4 bg-gray-100 rounded-lg focus:outline-none"
                                     onChange={(e) => setEmail(e.target.value)}
                                 />
 
@@ -166,13 +157,13 @@ export default function signin({ adminIdCookie }) {
                                     id="password"
                                     name="password"
                                     value={password}
-                                    className="bg-gray-100 p-2 mx-2 mb-4 focus:outline-none rounded-lg w-full"
+                                    className="w-full p-2 mx-2 mb-4 bg-gray-100 rounded-lg focus:outline-none"
                                     onChange={(e) =>
                                         setPassword(e.target.value)
                                     }
                                 />
 
-                                <p className="text-sm text-gray-700 mt-6">
+                                <p className="mt-6 text-sm text-gray-700">
                                     *You have the option to designate yourself
                                     as an admin for testing purposes by
                                     following this{" "}
@@ -193,12 +184,12 @@ export default function signin({ adminIdCookie }) {
                                 </button>
 
                                 <button
-                                    type="submit"
+                                    type="button"
                                     onClick={() => {
                                         setEmail("invite.testing@gmail.com");
                                         setPassword("invite123");
                                     }}
-                                    className="btn text-white bg-gray-700 hover:bg-gray-800 mt-4 w-full sm:w-auto sm:ml-4"
+                                    className="w-full mt-4 text-white bg-gray-700 btn hover:bg-gray-800 sm:w-auto sm:ml-4"
                                 >
                                     Use Test Credentials
                                 </button>
@@ -206,10 +197,9 @@ export default function signin({ adminIdCookie }) {
                         )
                     }
                     {
-                        /* Step 2 Content */
                         step === 2 && (
                             <div>
-                                <div className="bg-green-50 border-b border-green-400 text-green-800 text-sm p-4 flex justify-between">
+                                <div className="flex justify-between p-4 text-sm text-green-800 border-b border-green-400 bg-green-50">
                                     <div>
                                         <div className="flex items-center">
                                             <p>

@@ -1,51 +1,62 @@
+import { getAdminToken } from "@/utils/getAdminToken";
 import AdminNavBar from "@/components/AdminNavBar";
 import Dashboard_Filter from "@/components/Dashboard_Filter";
 import Popup_Filter from "@/components/Popup_Filter";
-import { getAdminToken } from "@/utils/getAdminToken";
 import Image from "next/image";
 import { useRouter } from "next/router";
 import { useEffect, useState } from "react";
 import { AiOutlinePlus } from "react-icons/ai";
 import { FaUsers } from "react-icons/fa";
 import { RxHamburgerMenu } from "react-icons/rx";
+import axios from "axios";
 
 function UserDashboard() {
     const router = useRouter();
-
-    const [allEvents, setAllEvents] = useState([]);
     const adminIdCookie = getAdminToken();
+    
+    const [allEvents, setAllEvents] = useState([]);
+    const [filteredEvents, setFilteredEvents] = useState([]);
     const [popupFilterOpen, setPopupFilterOpen] = useState(false);
     const [filterOptions, setFilterOptions] = useState({
         keyword: "",
-        category: "",
         dateRange: "",
         price: [10, 3000],
     });
     const [originalEvents, setOriginalEvents] = useState([]);
+    const [error, setError] = useState("");
 
+    // Fetch all events from API
     const fetchAllEvents = async () => {
-        const response = await fetch(
-            `${process.env.NEXT_PUBLIC_API_URL}/admin/details`,
-            {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                },
-                body: JSON.stringify({
-                    admin_id: adminIdCookie,
-                }),
-            }
-        );
-        if (!response.ok)
-            throw new Error(`${response.status} ${response.statusText}`);
+        if (!adminIdCookie) {
+            console.error("No admin cookie found!");
+            router.push("/admin/auth");
+            return;
+        }
 
-        // Admin Details fetched from API `/admin/details`
+        
         try {
-            const data = await response.json();
-            setAllEvents(data.eventCreated);
-            setOriginalEvents(data.eventCreated);
+            const response = await axios.post(
+                `${process.env.NEXT_PUBLIC_API_URL}/admin/details`,
+                { admin_id: adminIdCookie },
+                { headers: { "Content-Type": "application/json" } }
+            );
+            console.log("Fetched events:", response.data.eventCreated);
+
+            setAllEvents(response.data.eventCreated || []);
+            setOriginalEvents(response.data.eventCreated || []);
         } catch (error) {
-            console.error("Invalid JSON string:", error.message);
+            if (error.response) {
+                // Server responded with an error status
+                setError(`${error.response.status} ${error.response.statusText}`);
+            } else if (error.request) {
+                // No response was received
+                setError("No response received from server");
+            } else {
+                // Error setting up the request
+                setError(`Error: ${error.message}`);
+            }
+            console.error("Failed to fetch events:", error);
+            router.push("/admin/auth"); // Redirect if necessary
         }
     };
 
@@ -53,52 +64,63 @@ function UserDashboard() {
         fetchAllEvents();
     }, []);
 
-    // dont move this state becoz it needs allevents
-    const [filteredEvents, setFilteredEvents] = useState(allEvents);
-
     // Update filteredEvents state whenever allEvents or filterOptions change
     useEffect(() => {
-        const newFilteredEvents = allEvents.filter((event) => {
-            // Check if keyword filter matches
-            if (
-                filterOptions.keyword.toLowerCase() &&
-                !event.name
-                    .toLowerCase()
-                    .includes(filterOptions.keyword.toLowerCase())
-            ) {
-                return false;
-            }
-
-            // Check if date range filter matches
-            if (filterOptions.dateRange) {
-                const date = filterOptions.dateRange;
-                // Split the date string into an array of substrings
-                const dateParts = event.date.split("/");
-                // Rearrange the array elements to get yyyy-mm-dd format
-                const formattedDate = `${dateParts[2]}-${dateParts[1]}-${dateParts[0]}`;
-                if (formattedDate < date) {
+        // Ensure allEvents is an array and filterOptions is defined
+        if (Array.isArray(allEvents)) {
+            const newFilteredEvents = allEvents.filter((event) => {
+                // Ensure event object has the necessary properties
+                if (!event.name || !event.date || event.price === undefined) {
+                    return false; // Exclude events with missing data
+                }
+    
+                // Check if keyword filter matches
+                if (
+                    filterOptions.keyword &&
+                    filterOptions.keyword.toLowerCase() &&
+                    !event.name.toLowerCase().includes(filterOptions.keyword.toLowerCase()) &&
+                    !event.venue.toLowerCase().includes(filterOptions.keyword.toLowerCase())
+                ) {
                     return false;
                 }
-            }
-
-            // Check if price filter matches
-            if (
-                event.price < filterOptions.price[0] ||
-                event.price > filterOptions.price[1]
-            ) {
-                return false;
-            }
-
-            return true;
-        });
-
-        setFilteredEvents(newFilteredEvents);
+    
+                // Check if date range filter matches
+                if (filterOptions.dateRange) {
+                    const date = filterOptions.dateRange;
+                    // Ensure event.date is in the expected format
+                    const dateParts = event.date.split("/");
+                    if (dateParts.length === 3) {
+                        // Rearrange the array elements to get yyyy-mm-dd format
+                        const formattedDate = `${dateParts[2]}-${dateParts[1]}-${dateParts[0]}`;
+                        if (formattedDate < date) {
+                            return false;
+                        }
+                    }
+                }
+    
+                // Check if price filter matches
+                if (
+                    event.price < filterOptions.price[0] ||
+                    event.price > filterOptions.price[1]
+                ) {
+                    return false;
+                }
+    
+                return true;
+            });
+    
+            setFilteredEvents(newFilteredEvents);
+        } else {
+            // Handle case where allEvents is not an array
+            console.warn("Expected allEvents to be an array, but it is not.");
+            setFilteredEvents([]);
+        }
     }, [allEvents, filterOptions]);
+    
 
     const handleFilterClear = () => {
         setFilterOptions({
             keyword: "",
-            category: "",
             dateRange: "",
             price: [10, 3000],
         });
@@ -110,10 +132,10 @@ function UserDashboard() {
         <div className="pt-20 lg:pt-8 overflow-y-hidden bg-[color:var(--primary-color)]">
             <AdminNavBar />
             <div className="flex m-auto">
-                <div className="flex mx-auto container ">
+                <div className="container flex mx-auto">
                     <div className="flex m-auto gap-4 lg:gap-8 overflow-y-hidden w-full h-[calc(88vh)]">
                         {/* Render the regular filter for medium screens and above */}
-                        <div className="hidden md:flex flex-col p-4 sticky top-0 w-1/6 md:w-1/4">
+                        <div className="sticky top-0 flex-col hidden w-1/6 p-4 md:flex md:w-1/4">
                             <Dashboard_Filter
                                 filterOptions={filterOptions}
                                 setFilterOptions={setFilterOptions}
@@ -122,26 +144,22 @@ function UserDashboard() {
                         </div>
                         {/* Render the popup filter for small screens */}
                         {popupFilterOpen && (
-                            <div className="md:hidden fixed inset-0 z-10 bg-black bg-opacity-50 flex items-center justify-center">
-                                <div className="bg-white rounded-lg p-4 w-5/6">
+                            <div className="fixed inset-0 z-10 flex items-center justify-center bg-black bg-opacity-50 md:hidden">
+                                <div className="w-5/6 p-4 bg-white rounded-lg">
                                     <Popup_Filter
                                         filterOptions={filterOptions}
                                         setFilterOptions={setFilterOptions}
                                         handleFilterClear={handleFilterClear}
-                                        handleClose={() =>
-                                            setPopupFilterOpen(false)
-                                        }
+                                        handleClose={() => setPopupFilterOpen(false)}
                                     />
                                 </div>
                             </div>
                         )}
                         {/* Render the main content of the dashboard */}
-                        <div className="flex w-full md:w-3/4 mx-auto justify-between container">
+                        <div className="container flex justify-between w-full mx-auto md:w-3/4">
                             <div className="p-4 overflow-y-auto w-full h-[calc(80vh)]">
-                                <h2 className="text-lg font-medium mb-4">
-                                    Events
-                                </h2>
-                                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+                                <h2 className="mb-4 text-lg font-medium">Events</h2>
+                                <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
                                     {filteredEvents.length === 0 ? (
                                         <p>No events yet</p>
                                     ) : (
@@ -159,7 +177,7 @@ function UserDashboard() {
                                                     {event.profile && (
                                                         <Image
                                                             fill
-                                                            className="object-cover h-full w-full rounded-md"
+                                                            className="object-cover w-full h-full rounded-md"
                                                             src={event.profile}
                                                             alt=""
                                                             sizes="(min-width: 640px) 100vw, 50vw"
@@ -167,15 +185,11 @@ function UserDashboard() {
                                                         />
                                                     )}
                                                 </div>
-                                                <div className="flex flex-row justify-between items-start mt-4">
+                                                <div className="flex flex-row items-start justify-between mt-4">
                                                     <div className="px-2">
-                                                        <p className="text-sm text-gray-800 font-bold">
-                                                            {event.name.length >
-                                                            30
-                                                                ? event.name.slice(
-                                                                      0,
-                                                                      30
-                                                                  ) + "..."
+                                                        <p className="text-sm font-bold text-gray-800">
+                                                            {event.name.length > 30
+                                                                ? event.name.slice(0, 30) + "..."
                                                                 : event.name}
                                                         </p>
                                                         <p className="text-sm text-gray-800">
@@ -186,16 +200,16 @@ function UserDashboard() {
                                                         </p>
                                                     </div>
                                                     {/* Star component */}
-                                                    <div className="flex flex-col justify-end items-center">
-                                                        <span className="w-full flex flex-row items-center">
+                                                    <div className="flex flex-col items-center justify-end">
+                                                        <span className="flex flex-row items-center w-full">
                                                             <FaUsers />
                                                             <span className="ml-2 text-sm">
                                                                 4,92
                                                             </span>
                                                         </span>
-                                                        <p className="text-sm text-gray-800 mt-2">
+                                                        <p className="mt-2 text-sm text-gray-800">
                                                             <strong className="whitespace-nowrap">
-                                                                ₹ {event.price}
+                                                                £ {event.price}
                                                             </strong>
                                                         </p>
                                                     </div>
