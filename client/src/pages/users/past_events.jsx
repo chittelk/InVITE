@@ -48,7 +48,6 @@ function UserDashboard() {
     const [popupFilterOpen, setPopupFilterOpen] = useState(false);
     const [filterOptions, setFilterOptions] = useState({
         keyword: "",
-        category: "",
         dateRange: "",
         price: [10, 100],
     });
@@ -144,7 +143,7 @@ function UserDashboard() {
                                                         </span>
                                                         <p className="text-sm text-gray-800 mt-2">
                                                             <strong className="whitespace-nowrap">
-                                                                ₹ {event.price}
+                                                                £ {event.price}
                                                             </strong>
                                                         </p>
                                                     </div>
