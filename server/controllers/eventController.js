@@ -185,17 +185,14 @@ const checkin = async (req, res) => {
         .catch((err) => {
             res.status(400).send({ msg: "Error fetching event", error: err });
         });
+        console.log(userList);
 
     for (let i = 0; i < userList.length; i++) {
+        
         Event.updateOne(
             { event_id: eventId, "participants.id": userList[i] },
             { $set: { "participants.$.entry": true } },
-            function (err) {
-                if (err) return handleError(err);
-                else {
-                    console.log(`user :: checked-in`);
-                }
-            }
+            
         );
     }
 
