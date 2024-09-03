@@ -11,7 +11,7 @@ const userSchema = new mongoose.Schema(
         reg_number: {
             type: String,
             trim: true,
-            required: true,
+            required: false,
         },
         username: {
             type: String,
@@ -27,7 +27,12 @@ const userSchema = new mongoose.Schema(
             type: String,
             required: true,
         },
-        registeredEvents: [eventSchema],
+        password: {
+            type: String,
+            required: true,
+        },
+        registeredEvents: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Event' }],
+
     },
     { timestamps: true }
 );

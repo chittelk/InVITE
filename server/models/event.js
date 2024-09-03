@@ -37,7 +37,17 @@ const eventSchema = new mongoose.Schema(
         organizer: {
             type: String,
         },
-        participants: [],
+        participants: [
+            {
+                id: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
+                name: String,
+                email: String,
+                passID: String,
+                regno: mongoose.Schema.Types.ObjectId,
+                entry: Boolean,
+            }
+        ],
+        
     },
     { timestamps: true }
 );
