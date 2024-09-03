@@ -1,15 +1,14 @@
 const express = require("express");
 const router = express.Router();
-const {
-    signUp,
-    verifyOtp,
-    signIn,
-    verifyLogin,
-} = require("../controllers/authController");
+const { signUp, signIn, verifyToken } = require("../controllers/authController"); // Adjust the path to your controller
 
-router.route("/signup").post(signUp);
-router.route("/signup/verify").post(verifyOtp);
-router.route("/signin").post(signIn);
-router.route("/signin/verify").post(verifyLogin);
+// Route for user sign-up
+router.post("/signup", signUp);
+
+// Route for user sign-in
+router.post("/signin", signIn);
+
+// Route for verifying JWT token
+router.post("/verifyToken", verifyToken);
 
 module.exports = router;
