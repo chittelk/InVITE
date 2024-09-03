@@ -5,7 +5,6 @@ import React, { useState } from "react";
 function Dashboard_Filter({
     filterOptions = {
         keyword: "",
-        category: "",
         dateRange: "",
         price: [10, 3000],
     },
@@ -18,9 +17,6 @@ function Dashboard_Filter({
         switch (name) {
             case "keyword":
                 setFilterOptions({ ...filterOptions, keyword: value });
-                break;
-            case "category":
-                setFilterOptions({ ...filterOptions, category: value });
                 break;
             case "dateRange":
                 setFilterOptions({ ...filterOptions, dateRange: value });
@@ -38,11 +34,11 @@ function Dashboard_Filter({
     return (
         // Add filter options to the DOM element
         <div>
-            <h2 className="text-lg font-medium mb-2">Filter Options</h2>
+            <h2 className="mb-2 text-lg font-medium">Filter Options</h2>
             <form className="flex flex-col gap-y-3">
                 {/* Input to search through keyword */}
                 <div className="mb-2">
-                    <label htmlFor="keyword" className="font-medium block mb-1">
+                    <label htmlFor="keyword" className="block mb-1 font-medium">
                         Keyword
                     </label>
                     <input
@@ -55,34 +51,14 @@ function Dashboard_Filter({
                         placeholder="Search by keyword..."
                     />
                 </div>
-                {/* Selection menu to choose a category */}
-                <div className="mb-2">
-                    <label
-                        htmlFor="category"
-                        className="font-medium block mb-1"
-                    >
-                        Category
-                    </label>
-                    <select
-                        id="category"
-                        name="category"
-                        value={filterOptions.category}
-                        onChange={handleInputChange}
-                        className="filterInput"
-                    >
-                        <option value="">Select a category...</option>
-                        <option value="category1">Technical</option>
-                        <option value="category2">Comic</option>
-                        <option value="category3">Personalized</option>
-                    </select>
-                </div>
+            
                 {/* Input field to filter through a date range */}
                 <div className="mb-2">
                     <label
                         htmlFor="dateRange"
-                        className="font-medium block mb-1"
+                        className="block mb-1 font-medium"
                     >
-                        Date Range
+                        Events After Date
                     </label>
                     <input
                         type="date"
@@ -105,13 +81,13 @@ function Dashboard_Filter({
                         onChange={handlePriceChange}
                     />
                     <p>
-                        ₹{filterOptions.price[0]} - ₹{filterOptions.price[1]}
+                    £{filterOptions.price[0]} - £{filterOptions.price[1]}
                     </p>
                 </div>
             </form>
             <button
                 onClick={handleFilterClear}
-                className="w-full mt-2 text-white py-2 px-4 rounded-lg bg-gray-700 hover:bg-gray-800"
+                className="w-full px-4 py-2 mt-2 text-white bg-gray-700 rounded-lg hover:bg-gray-800"
             >
                 Clear Filters
             </button>

@@ -6,23 +6,21 @@ import { GrFormClose } from "react-icons/gr";
 function Popup_Filter({
     filterOptions = {
         keyword: "",
-        category: "",
         dateRange: "",
         price: [10, 3000],
     },
     setFilterOptions,
     handleClose,
     handleFilterClear,
+    events, // Assuming events is passed as a prop containing all events
+    setFilteredEvents // Function to set the filtered events
 }) {
-    // function to handle filter values
+    // Function to handle filter values
     const handleInputChange = (e) => {
         const { name, value } = e.target;
         switch (name) {
             case "keyword":
                 setFilterOptions({ ...filterOptions, keyword: value });
-                break;
-            case "category":
-                setFilterOptions({ ...filterOptions, category: value });
                 break;
             case "dateRange":
                 setFilterOptions({ ...filterOptions, dateRange: value });
@@ -37,8 +35,42 @@ function Popup_Filter({
         setFilterOptions({ ...filterOptions, price: [...value] });
     };
 
+    // Function to apply filters
+    const applyFilters = (e) => {
+        e.preventDefault();
+        // Filtering events based on filter options
+        let filtered = [...events]; // Create a copy of events to filter
+
+        if (filterOptions.keyword) {
+            filtered = filtered.filter(event =>
+                event.title.toLowerCase().includes(filterOptions.keyword.toLowerCase())
+            );
+        }
+
+        if (filterOptions.dateRange) {
+            const selectedDate = new Date(filterOptions.dateRange);
+            filtered = filtered.filter(event => {
+                const eventDate = new Date(event.date); // Assuming event.date is the event date
+                return (
+                    eventDate.getFullYear() === selectedDate.getFullYear() &&
+                    eventDate.getMonth() === selectedDate.getMonth() &&
+                    eventDate.getDate() === selectedDate.getDate()
+                );
+            });
+        }
+
+        if (filterOptions.price) {
+            filtered = filtered.filter(event =>
+                event.price >= filterOptions.price[0] &&
+                event.price <= filterOptions.price[1]
+            );
+        }
+
+        setFilteredEvents(filtered); // Update the filtered events state
+        handleClose(); // Close the filter popup
+    };
+
     return (
-        // Add filter options to the DOM element
         <div className="fixed top-0 left-0 right-0 bottom-0 z-50 mt-[8rem] bg-white p-4">
             <div className="flex justify-between items-center mb-4">
                 <h2 className="text-lg font-medium">Filter Options</h2>
@@ -49,7 +81,7 @@ function Popup_Filter({
                     <GrFormClose className="h-6 w-6" />
                 </button>
             </div>
-            <form className="flex flex-col gap-y-3" onSubmit={handleClose}>
+            <form className="flex flex-col gap-y-3" onSubmit={applyFilters}>
                 {/* Input to search through keyword */}
                 <div className="mb-2">
                     <label htmlFor="keyword" className="font-medium block mb-1">
@@ -65,34 +97,14 @@ function Popup_Filter({
                         placeholder="Search by keyword..."
                     />
                 </div>
-                {/* Selection menu to choose a category */}
-                <div className="mb-2">
-                    <label
-                        htmlFor="category"
-                        className="font-medium block mb-1"
-                    >
-                        Category
-                    </label>
-                    <select
-                        id="category"
-                        name="category"
-                        value={filterOptions.category}
-                        onChange={handleInputChange}
-                        className="filterInput"
-                    >
-                        <option value="">Select a category...</option>
-                        <option value="category1">Category 1</option>
-                        <option value="category2">Category 2</option>
-                        <option value="category3">Category 3</option>
-                    </select>
-                </div>
+               
                 {/* Input field to filter through a date range */}
                 <div className="mb-2">
                     <label
                         htmlFor="dateRange"
                         className="font-medium block mb-1"
                     >
-                        Date Range
+                        Date
                     </label>
                     <input
                         type="date"
@@ -115,7 +127,7 @@ function Popup_Filter({
                         onChange={handlePriceChange}
                     />
                     <p>
-                        ₹{filterOptions.price[0]} - ₹{filterOptions.price[1]}
+                        £{filterOptions.price[0]} - £{filterOptions.price[1]}
                     </p>
                 </div>
                 {/* Button to apply filters */}

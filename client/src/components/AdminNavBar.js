@@ -3,44 +3,53 @@ import Image from "next/image";
 import { useRouter } from "next/router";
 import { useEffect, useState } from "react";
 import AdminDropdown from "@/components/AdminDropdown";
+import axios from "axios";
 
 export default function NavBar() {
     const router = useRouter();
 
     const adminIdCookie = getAdminToken();
-    // console.log(adminIdCookie);
     const [adminData, setAdminData] = useState({});
+    const [error, setError] = useState("");
 
-    // fetch the admin data as soon as the page loads
+    // Fetch the admin data as soon as the page loads
     const fetchAdminData = async () => {
         // If cookie was manually removed from browser
         if (!adminIdCookie) {
             console.error("No cookie found! Please authenticate");
-            // redirect to signin
+            // Redirect to signin
             router.push("/admin/auth");
+            return;
         }
-        const response = await fetch(
-            `${process.env.NEXT_PUBLIC_API_URL}/admin/details`,
-            {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                },
-                body: JSON.stringify({
-                    admin_id: adminIdCookie,
-                }),
-            }
-        );
-        if (!response.ok)
-            throw new Error(`${response.status} ${response.statusText}`);
 
-        // Admin Details fetched from API `/admin/details`
         try {
-            const data = await response.json();
-            // console.log(data);
-            setAdminData(data);
+            const response = await axios.post(
+                `${process.env.NEXT_PUBLIC_API_URL}/admin/details`,
+                {
+                    admin_id: adminIdCookie,
+                },
+                {
+                    headers: {
+                        "Content-Type": "application/json",
+                    },
+                }
+            );
+
+            setAdminData(response.data);
         } catch (error) {
-            console.error("Invalid JSON string:", error.message);
+            // Handle errors from axios
+            if (error.response) {
+                // Server responded with a status other than 2xx
+                setError(`${error.response.status} ${error.response.statusText}`);
+            } else if (error.request) {
+                // No response was received
+                setError("No response received from server");
+            } else {
+                // Error in setting up request
+                setError(`Error: ${error.message}`);
+            }
+            console.error("Failed to fetch admin data:", error);
+            router.push("/admin/auth"); // Redirect if necessary
         }
     };
 
@@ -83,7 +92,7 @@ export default function NavBar() {
                                 onClick={() => router.push("/")}
                                 className="mr-4 cursor-pointer"
                             >
-                                <a>About us</a>
+                                <a>Home</a>
                             </li>
                             <AdminDropdown adminData={adminData} />
                         </ul>
